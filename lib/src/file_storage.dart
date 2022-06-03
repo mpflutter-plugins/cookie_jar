@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'stroage.dart';
+import 'package:mp_file/mp_file.dart';
 
 ///Save cookies in  files
 
@@ -20,7 +20,7 @@ class FileStorage implements Storage {
   @override
   Future<void> delete(String key) async {
     final file = File('$_curDir$key');
-    if (file.existsSync()) {
+    if (await file.exists()) {
       await file.delete(recursive: true);
     }
   }
@@ -32,18 +32,20 @@ class FileStorage implements Storage {
 
   @override
   Future<void> init(bool persistSession, bool ignoreExpires) async {
-    _curDir = dir ?? './.cookies/';
+    final sandboxDir = await FileManager.getFileManager().appSandboxDirectory();
+    _curDir = '${sandboxDir.path}/${dir ?? '.cookies'}/';
     if (!_curDir.endsWith('/')) {
       _curDir = _curDir + '/';
     }
-    _curDir = _curDir + 'ie${ignoreExpires ? 1 : 0}_ps${persistSession ? 1 : 0}/';
+    _curDir =
+        _curDir + 'ie${ignoreExpires ? 1 : 0}_ps${persistSession ? 1 : 0}/';
     await _makeCookieDir();
   }
 
   @override
   Future<String?> read(String key) async {
     final file = File('$_curDir$key');
-    if (file.existsSync()) {
+    if (await file.exists()) {
       if (readPreHandler != null) {
         return readPreHandler!(await file.readAsBytes());
       } else {
@@ -66,7 +68,7 @@ class FileStorage implements Storage {
 
   Future<void> _makeCookieDir() async {
     final directory = Directory(_curDir);
-    if (!directory.existsSync()) {
+    if (!(await directory.exists())) {
       await directory.create(recursive: true);
     }
   }
